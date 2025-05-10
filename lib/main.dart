@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'dart:math' as math;
 import 'tip_calculator.dart';
 import 'loan_calculator.dart';
+import 'currency_converter.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -294,6 +295,17 @@ class _ProfessionalCalculatorState extends State<ProfessionalCalculator> {
               );
             },
             tooltip: 'Loan Calculator',
+          ),
+          IconButton(
+            icon: const Icon(Icons.currency_exchange),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const CurrencyConverter()),
+              );
+            },
+            tooltip: 'Currency Converter',
           ),
           IconButton(
             icon: const Icon(Icons.history),
