@@ -22,10 +22,12 @@ class _TipCalculatorState extends State<TipCalculator>
 
   // Controllers for the text fields
   final TextEditingController _billAmountController = TextEditingController();
-  final TextEditingController _tipPercentController =
-      TextEditingController(text: '15');
-  final TextEditingController _numberOfPeopleController =
-      TextEditingController(text: '1');
+  final TextEditingController _tipPercentController = TextEditingController(
+    text: '15',
+  );
+  final TextEditingController _numberOfPeopleController = TextEditingController(
+    text: '1',
+  );
 
   // Values for calculations
   double _billAmount = 0.0;
@@ -36,6 +38,8 @@ class _TipCalculatorState extends State<TipCalculator>
   double _tipAmount = 0.0;
   double _totalAmount = 0.0;
   double _perPersonAmount = 0.0;
+  double _perPersonBillAmount = 0.0;
+  double _perPersonTipAmount = 0.0;
 
   // For pie chart interaction
   int _touchedIndex = -1;
@@ -77,13 +81,15 @@ class _TipCalculatorState extends State<TipCalculator>
     setState(() {
       _billAmount =
           double.tryParse(_billAmountController.text.replaceAll(',', '')) ??
-              0.0;
+          0.0;
       _tipPercent = double.tryParse(_tipPercentController.text) ?? 15.0;
       _numberOfPeople = int.tryParse(_numberOfPeopleController.text) ?? 1;
 
       _tipAmount = (_billAmount * _tipPercent) / 100;
       _totalAmount = _billAmount + _tipAmount;
       _perPersonAmount = _totalAmount / _numberOfPeople;
+      _perPersonBillAmount = _billAmount / _numberOfPeople;
+      _perPersonTipAmount = _tipAmount / _numberOfPeople;
 
       // Only reset animation if it's already been initialized
       if (_animationController.isAnimating) {
@@ -99,10 +105,7 @@ class _TipCalculatorState extends State<TipCalculator>
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Tip Calculator'),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('Tip Calculator'), elevation: 0),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -116,10 +119,7 @@ class _TipCalculatorState extends State<TipCalculator>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Bill Details',
-                      style: theme.textTheme.titleLarge,
-                    ),
+                    Text('Bill Details', style: theme.textTheme.titleLarge),
                     const SizedBox(height: 16),
                     TextField(
                       controller: _billAmountController,
@@ -149,7 +149,8 @@ class _TipCalculatorState extends State<TipCalculator>
                             ),
                             inputFormatters: [
                               FilteringTextInputFormatter.allow(
-                                  RegExp(r'[0-9.]')),
+                                RegExp(r'[0-9.]'),
+                              ),
                             ],
                             onChanged: (_) => _calculateTip(),
                           ),
@@ -210,10 +211,7 @@ class _TipCalculatorState extends State<TipCalculator>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Results',
-                      style: theme.textTheme.titleLarge,
-                    ),
+                    Text('Results', style: theme.textTheme.titleLarge),
                     const SizedBox(height: 16),
                     ResultRow(
                       label: 'Bill Amount:',
@@ -239,10 +237,34 @@ class _TipCalculatorState extends State<TipCalculator>
                     ),
                     if (_numberOfPeople > 1) ...[
                       const SizedBox(height: 8),
+                      const Divider(),
+                      Text(
+                        'Per Person Breakdown:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.secondary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
                       ResultRow(
-                        label: 'Per Person:',
+                        label: 'Bill Per Person:',
+                        amount: _perPersonBillAmount,
+                        color: Colors.grey,
+                        currencyFormat: _currencyFormat,
+                      ),
+                      const SizedBox(height: 8),
+                      ResultRow(
+                        label: 'Tip Per Person:',
+                        amount: _perPersonTipAmount,
+                        color: colorScheme.primary,
+                        currencyFormat: _currencyFormat,
+                      ),
+                      const SizedBox(height: 8),
+                      ResultRow(
+                        label: 'Total Per Person:',
                         amount: _perPersonAmount,
                         color: colorScheme.secondary,
+                        isBold: true,
                         currencyFormat: _currencyFormat,
                       ),
                     ],
@@ -261,10 +283,7 @@ class _TipCalculatorState extends State<TipCalculator>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Visual Breakdown',
-                      style: theme.textTheme.titleLarge,
-                    ),
+                    Text('Visual Breakdown', style: theme.textTheme.titleLarge),
                     const SizedBox(height: 16),
                     if (_billAmount > 0) ...[
                       Stack(
@@ -273,78 +292,87 @@ class _TipCalculatorState extends State<TipCalculator>
                           SizedBox(
                             height: 250,
                             child: AnimatedBuilder(
-                                animation: _animation,
-                                builder: (context, child) {
-                                  return PieChart(
-                                    PieChartData(
-                                      pieTouchData: PieTouchData(
-                                        touchCallback: (FlTouchEvent event,
-                                            pieTouchResponse) {
-                                          setState(() {
-                                            if (!event
-                                                    .isInterestedForInteractions ||
-                                                pieTouchResponse == null ||
-                                                pieTouchResponse
-                                                        .touchedSection ==
-                                                    null) {
-                                              _touchedIndex = -1;
-                                              return;
-                                            }
-                                            _touchedIndex = pieTouchResponse
-                                                .touchedSection!
-                                                .touchedSectionIndex;
-                                          });
-                                        },
-                                      ),
-                                      sectionsSpace: 2,
-                                      centerSpaceRadius: 40,
-                                      sections: [
-                                        PieChartSectionData(
-                                          color: Colors.grey.shade400,
-                                          value: _billAmount,
-                                          title: 'Bill',
-                                          radius: _touchedIndex == 0
-                                              ? 110
-                                              : 100 * _animation.value,
-                                          titleStyle: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.white,
-                                          ),
-                                          badgeWidget: _touchedIndex == 0
-                                              ? _Badge(
-                                                  _currencyFormat
-                                                      .format(_billAmount),
+                              animation: _animation,
+                              builder: (context, child) {
+                                return PieChart(
+                                  PieChartData(
+                                    pieTouchData: PieTouchData(
+                                      touchCallback: (
+                                        FlTouchEvent event,
+                                        pieTouchResponse,
+                                      ) {
+                                        setState(() {
+                                          if (!event
+                                                  .isInterestedForInteractions ||
+                                              pieTouchResponse == null ||
+                                              pieTouchResponse.touchedSection ==
+                                                  null) {
+                                            _touchedIndex = -1;
+                                            return;
+                                          }
+                                          _touchedIndex =
+                                              pieTouchResponse
+                                                  .touchedSection!
+                                                  .touchedSectionIndex;
+                                        });
+                                      },
+                                    ),
+                                    sectionsSpace: 2,
+                                    centerSpaceRadius: 40,
+                                    sections: [
+                                      PieChartSectionData(
+                                        color: Colors.grey.shade400,
+                                        value: _billAmount,
+                                        title: 'Bill',
+                                        radius:
+                                            _touchedIndex == 0
+                                                ? 110
+                                                : 100 * _animation.value,
+                                        titleStyle: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                        badgeWidget:
+                                            _touchedIndex == 0
+                                                ? _Badge(
+                                                  _currencyFormat.format(
+                                                    _billAmount,
+                                                  ),
                                                   Colors.grey.shade400,
                                                 )
-                                              : null,
-                                          badgePositionPercentageOffset: 1.2,
+                                                : null,
+                                        badgePositionPercentageOffset: 1.2,
+                                      ),
+                                      PieChartSectionData(
+                                        color: colorScheme.primary,
+                                        value: _tipAmount,
+                                        title: '${_tipPercent.round()}%',
+                                        radius:
+                                            _touchedIndex == 1
+                                                ? 110
+                                                : 100 * _animation.value,
+                                        titleStyle: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
                                         ),
-                                        PieChartSectionData(
-                                          color: colorScheme.primary,
-                                          value: _tipAmount,
-                                          title: '${_tipPercent.round()}%',
-                                          radius: _touchedIndex == 1
-                                              ? 110
-                                              : 100 * _animation.value,
-                                          titleStyle: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.white,
-                                          ),
-                                          badgeWidget: _touchedIndex == 1
-                                              ? _Badge(
-                                                  _currencyFormat
-                                                      .format(_tipAmount),
+                                        badgeWidget:
+                                            _touchedIndex == 1
+                                                ? _Badge(
+                                                  _currencyFormat.format(
+                                                    _tipAmount,
+                                                  ),
                                                   colorScheme.primary,
                                                 )
-                                              : null,
-                                          badgePositionPercentageOffset: 1.2,
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                }),
+                                                : null,
+                                        badgePositionPercentageOffset: 1.2,
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
                           ),
                           // Center of chart is kept empty for cleaner look
                         ],
@@ -358,8 +386,12 @@ class _TipCalculatorState extends State<TipCalculator>
                             'Bill',
                             Colors.grey.shade400,
                             _currencyFormat.format(_billAmount),
-                            onTap: () => setState(() =>
-                                _touchedIndex = _touchedIndex == 0 ? -1 : 0),
+                            onTap:
+                                () => setState(
+                                  () =>
+                                      _touchedIndex =
+                                          _touchedIndex == 0 ? -1 : 0,
+                                ),
                             isSelected: _touchedIndex == 0,
                           ),
                           const SizedBox(width: 24),
@@ -367,8 +399,12 @@ class _TipCalculatorState extends State<TipCalculator>
                             'Tip',
                             colorScheme.primary,
                             _currencyFormat.format(_tipAmount),
-                            onTap: () => setState(() =>
-                                _touchedIndex = _touchedIndex == 1 ? -1 : 1),
+                            onTap:
+                                () => setState(
+                                  () =>
+                                      _touchedIndex =
+                                          _touchedIndex == 1 ? -1 : 1,
+                                ),
                             isSelected: _touchedIndex == 1,
                           ),
                         ],
@@ -442,10 +478,7 @@ class _TipCalculatorState extends State<TipCalculator>
                 ),
                 Text(
                   amount,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade700,
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
                 ),
               ],
             ),
@@ -573,9 +606,7 @@ class _ThousandsSeparatorInputFormatter extends TextInputFormatter {
 
       return TextEditingValue(
         text: formattedValue,
-        selection: TextSelection.collapsed(
-          offset: formattedValue.length,
-        ),
+        selection: TextSelection.collapsed(offset: formattedValue.length),
       );
     }
 
