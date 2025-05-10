@@ -50,6 +50,12 @@ class _TipCalculatorState extends State<TipCalculator>
   void initState() {
     super.initState();
 
+    // Force portrait orientation
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+
     // Initialize animation first
     _animationController = AnimationController(
       vsync: this,
@@ -81,7 +87,7 @@ class _TipCalculatorState extends State<TipCalculator>
     setState(() {
       _billAmount =
           double.tryParse(_billAmountController.text.replaceAll(',', '')) ??
-          0.0;
+              0.0;
       _tipPercent = double.tryParse(_tipPercentController.text) ?? 15.0;
       _numberOfPeople = int.tryParse(_numberOfPeopleController.text) ?? 1;
 
@@ -310,10 +316,9 @@ class _TipCalculatorState extends State<TipCalculator>
                                             _touchedIndex = -1;
                                             return;
                                           }
-                                          _touchedIndex =
-                                              pieTouchResponse
-                                                  .touchedSection!
-                                                  .touchedSectionIndex;
+                                          _touchedIndex = pieTouchResponse
+                                              .touchedSection!
+                                              .touchedSectionIndex;
                                         });
                                       },
                                     ),
@@ -324,48 +329,44 @@ class _TipCalculatorState extends State<TipCalculator>
                                         color: Colors.grey.shade400,
                                         value: _billAmount,
                                         title: 'Bill',
-                                        radius:
-                                            _touchedIndex == 0
-                                                ? 110
-                                                : 100 * _animation.value,
+                                        radius: _touchedIndex == 0
+                                            ? 110
+                                            : 100 * _animation.value,
                                         titleStyle: const TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
                                           color: Colors.white,
                                         ),
-                                        badgeWidget:
-                                            _touchedIndex == 0
-                                                ? _Badge(
-                                                  _currencyFormat.format(
-                                                    _billAmount,
-                                                  ),
-                                                  Colors.grey.shade400,
-                                                )
-                                                : null,
+                                        badgeWidget: _touchedIndex == 0
+                                            ? _Badge(
+                                                _currencyFormat.format(
+                                                  _billAmount,
+                                                ),
+                                                Colors.grey.shade400,
+                                              )
+                                            : null,
                                         badgePositionPercentageOffset: 1.2,
                                       ),
                                       PieChartSectionData(
                                         color: colorScheme.primary,
                                         value: _tipAmount,
                                         title: '${_tipPercent.round()}%',
-                                        radius:
-                                            _touchedIndex == 1
-                                                ? 110
-                                                : 100 * _animation.value,
+                                        radius: _touchedIndex == 1
+                                            ? 110
+                                            : 100 * _animation.value,
                                         titleStyle: const TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
                                           color: Colors.white,
                                         ),
-                                        badgeWidget:
-                                            _touchedIndex == 1
-                                                ? _Badge(
-                                                  _currencyFormat.format(
-                                                    _tipAmount,
-                                                  ),
-                                                  colorScheme.primary,
-                                                )
-                                                : null,
+                                        badgeWidget: _touchedIndex == 1
+                                            ? _Badge(
+                                                _currencyFormat.format(
+                                                  _tipAmount,
+                                                ),
+                                                colorScheme.primary,
+                                              )
+                                            : null,
                                         badgePositionPercentageOffset: 1.2,
                                       ),
                                     ],
@@ -386,12 +387,9 @@ class _TipCalculatorState extends State<TipCalculator>
                             'Bill',
                             Colors.grey.shade400,
                             _currencyFormat.format(_billAmount),
-                            onTap:
-                                () => setState(
-                                  () =>
-                                      _touchedIndex =
-                                          _touchedIndex == 0 ? -1 : 0,
-                                ),
+                            onTap: () => setState(
+                              () => _touchedIndex = _touchedIndex == 0 ? -1 : 0,
+                            ),
                             isSelected: _touchedIndex == 0,
                           ),
                           const SizedBox(width: 24),
@@ -399,12 +397,9 @@ class _TipCalculatorState extends State<TipCalculator>
                             'Tip',
                             colorScheme.primary,
                             _currencyFormat.format(_tipAmount),
-                            onTap:
-                                () => setState(
-                                  () =>
-                                      _touchedIndex =
-                                          _touchedIndex == 1 ? -1 : 1,
-                                ),
+                            onTap: () => setState(
+                              () => _touchedIndex = _touchedIndex == 1 ? -1 : 1,
+                            ),
                             isSelected: _touchedIndex == 1,
                           ),
                         ],

@@ -68,6 +68,12 @@ class _LoanCalculatorState extends State<LoanCalculator>
   void initState() {
     super.initState();
 
+    // Force portrait orientation
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+
     // Initialize animation
     _animationController = AnimationController(
       vsync: this,
