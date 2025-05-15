@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import 'tip_calculator.dart';
 import 'loan_calculator.dart';
 import 'currency_converter.dart';
+import 'unit_converter.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -276,6 +277,16 @@ class _ProfessionalCalculatorState extends State<ProfessionalCalculator> {
           ),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.square_foot),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const UnitConverter()),
+              );
+            },
+            tooltip: 'Unit Converter',
+          ),
           IconButton(
             icon: const Icon(Icons.restaurant),
             onPressed: () {
