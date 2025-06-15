@@ -806,20 +806,56 @@ class _ProfessionalCalculatorState extends State<ProfessionalCalculator> {
       ContextModel cm = ContextModel();
       double eval = exp.evaluate(EvaluationType.REAL, cm);
 
-      // Try to convert result to a fraction
-      Fraction resultFraction = Fraction.fromDouble(eval);
-
       // Format the displayed expression (for history)
       String displayExpr = _input;
 
-      setState(() {
-        _fractionResult = resultFraction;
-        _resultIsFraction = true;
-        _displayResult = resultFraction.toString();
-        _history.add('$displayExpr = $_displayResult');
-        _hasCalculated = true;
-        _isError = false;
-      });
+      // Check if the result should be displayed as a fraction or decimal
+      // Only convert to fraction if the original input contains fractions
+      bool inputHasFractions = _input.contains('/') &&
+          !_input.contains('÷'); // ÷ is division operator, not fraction
+
+      if (inputHasFractions) {
+        // Try to convert result to a fraction for fraction operations
+        Fraction resultFraction = Fraction.fromDouble(eval);
+        setState(() {
+          _fractionResult = resultFraction;
+          _resultIsFraction = true;
+          _displayResult = resultFraction.toString();
+          _history.add('$displayExpr = $_displayResult');
+          _hasCalculated = true;
+          _isError = false;
+        });
+      } else {
+        // For decimal operations, display as decimal with proper formatting
+        String formattedResult;
+
+        // Handle very large or very small numbers
+        if (eval.abs() >= 1e12 || (eval != 0 && eval.abs() < 1e-6)) {
+          formattedResult = eval.toStringAsExponential(6);
+        } else {
+          // Format decimal with appropriate precision
+          // Remove unnecessary trailing zeros
+          if (eval == eval.truncate()) {
+            // It's a whole number
+            formattedResult = eval.truncate().toString();
+          } else {
+            // It's a decimal - format with up to 10 decimal places, removing trailing zeros
+            formattedResult = eval
+                .toStringAsFixed(10)
+                .replaceAll(RegExp(r'0+$'), '')
+                .replaceAll(RegExp(r'\.$'), '');
+          }
+        }
+
+        setState(() {
+          _resultIsFraction = false;
+          _fractionResult = null;
+          _displayResult = formattedResult;
+          _history.add('$displayExpr = $_displayResult');
+          _hasCalculated = true;
+          _isError = false;
+        });
+      }
     } catch (e) {
       setState(() {
         _displayResult = 'Error';
@@ -834,68 +870,78 @@ class _ProfessionalCalculatorState extends State<ProfessionalCalculator> {
     // Replace display operators with calculation operators
     String expr = _input.replaceAll('×', '*').replaceAll('÷', '/');
 
-    // We need to properly handle fraction operations
-    // First, try to find pattern: fraction operator fraction
-    RegExp fracOpFracRegex = RegExp(r'(\d+)/(\d+)([+\-*/])(\d+)/(\d+)');
-
-    // Iterate until no more direct fraction operations are found
-    bool madeReplacement = true;
-    while (madeReplacement) {
-      madeReplacement = false;
-
-      // Find first fraction operation
-      var match = fracOpFracRegex.firstMatch(expr);
-      if (match != null) {
-        String fullMatch = match.group(0)!;
-        int num1 = int.parse(match.group(1)!);
-        int den1 = int.parse(match.group(2)!);
-        String op = match.group(3)!;
-        int num2 = int.parse(match.group(4)!);
-        int den2 = int.parse(match.group(5)!);
-
-        // Create fraction objects
-        Fraction frac1 = Fraction(num1, den1);
-        Fraction frac2 = Fraction(num2, den2);
-
-        // Perform the operation
-        Fraction result;
-        switch (op) {
-          case '+':
-            result = frac1.add(frac2);
-            break;
-          case '-':
-            result = frac1.subtract(frac2);
-            break;
-          case '*':
-            result = frac1.multiply(frac2);
-            break;
-          case '/':
-            result = frac1.divide(frac2);
-            break;
-          default:
-            result = frac1; // Default case, should not happen
-        }
-
-        // Replace the expression with the result
-        expr = expr.replaceFirst(fullMatch, result.toString());
-        madeReplacement = true;
-      }
+    // Check if we have actual fractions (not just division operators)
+    bool hasFractions = false;
+    RegExp fractionCheck = RegExp(r'\d+/\d+');
+    if (fractionCheck.hasMatch(expr)) {
+      hasFractions = true;
     }
 
-    // Now convert any remaining fractions to decimal for standard evaluation
-    RegExp singleFractionRegex = RegExp(r'(\d+)/(\d+)');
-    Iterable<RegExpMatch> matches = singleFractionRegex.allMatches(expr);
+    // Only do fraction processing if we actually have fraction notation
+    if (hasFractions) {
+      // We need to properly handle fraction operations
+      // First, try to find pattern: fraction operator fraction
+      RegExp fracOpFracRegex = RegExp(r'(\d+)/(\d+)([+\-*/])(\d+)/(\d+)');
 
-    for (var match in matches) {
-      String fullMatch = match.group(0)!;
-      int numerator = int.parse(match.group(1)!);
-      int denominator = int.parse(match.group(2)!);
+      // Iterate until no more direct fraction operations are found
+      bool madeReplacement = true;
+      while (madeReplacement) {
+        madeReplacement = false;
 
-      try {
-        double decimal = numerator / denominator;
-        expr = expr.replaceFirst(fullMatch, decimal.toString());
-      } catch (e) {
-        // Handle division by zero
+        // Find first fraction operation
+        var match = fracOpFracRegex.firstMatch(expr);
+        if (match != null) {
+          String fullMatch = match.group(0)!;
+          int num1 = int.parse(match.group(1)!);
+          int den1 = int.parse(match.group(2)!);
+          String op = match.group(3)!;
+          int num2 = int.parse(match.group(4)!);
+          int den2 = int.parse(match.group(5)!);
+
+          // Create fraction objects
+          Fraction frac1 = Fraction(num1, den1);
+          Fraction frac2 = Fraction(num2, den2);
+
+          // Perform the operation
+          Fraction result;
+          switch (op) {
+            case '+':
+              result = frac1.add(frac2);
+              break;
+            case '-':
+              result = frac1.subtract(frac2);
+              break;
+            case '*':
+              result = frac1.multiply(frac2);
+              break;
+            case '/':
+              result = frac1.divide(frac2);
+              break;
+            default:
+              result = frac1; // Default case, should not happen
+          }
+
+          // Replace the expression with the result
+          expr = expr.replaceFirst(fullMatch, result.toString());
+          madeReplacement = true;
+        }
+      }
+
+      // Now convert any remaining fractions to decimal for standard evaluation
+      RegExp singleFractionRegex = RegExp(r'(\d+)/(\d+)');
+      Iterable<RegExpMatch> matches = singleFractionRegex.allMatches(expr);
+
+      for (var match in matches) {
+        String fullMatch = match.group(0)!;
+        int numerator = int.parse(match.group(1)!);
+        int denominator = int.parse(match.group(2)!);
+
+        try {
+          double decimal = numerator / denominator;
+          expr = expr.replaceFirst(fullMatch, decimal.toString());
+        } catch (e) {
+          // Handle division by zero
+        }
       }
     }
 
